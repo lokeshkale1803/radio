@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Studio · Radio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- Login -->
+<section id="login" class="login">
+  <h1>Open the studio</h1>
+  <p class="muted">Enter the studio key you set as <code>HOST_KEY</code> when starting the server.</p>
+  <form id="loginForm" class="form-grid">
+    <label>Studio key <input id="hostKey" type="password" autocomplete="current-password" required></label>
+    <p id="loginErr" class="error hidden"></p>
+    <button class="btn-amber" type="submit">Enter studio</button>
+  </form>
+</section>
+
+<!-- Studio -->
+<main id="studio" class="wrap hidden">
+  <header class="top">
+    <div class="brand">
+      <span id="lamp" class="lamp" aria-hidden="true"></span>
+      <div>
+        <h1 id="stationTitle">Studio</h1>
+        <p class="status-text" id="liveText">Off air</p>
+      </div>
+    </div>
+    <div class="row">
+      <span class="pill" title="People tuned in"><span id="listenerCount">0</span>&nbsp;listening</span>
+      <a class="btn btn-ghost btn-sm" href="/listen.html" target="_blank" rel="noopener">Open listener page</a>
+      <button id="liveBtn" class="btn-live">Go live</button>
+    </div>
+  </header>
+
+  <section class="dial" id="dial" aria-live="polite">
+    <p class="dial-title">Nothing playing</p>
+    <p class="dial-sub">Add songs to your library, then press play</p>
+    <p class="dedication hidden"></p>
+    <div class="dial-scale" aria-hidden="true">
+      <div class="dial-ticks"></div>
+      <div class="dial-nums"><span>88</span><span>92</span><span>96</span><span>100</span><span>104</span><span>108</span></div>
+      <div class="needle"></div>
+    </div>
+    <div class="dial-times"><span data-cur>0:00</span><span data-dur>--:--</span></div>
+  </section>
+
+  <div class="grid host" style="margin-top:16px">
+    <div class="col">
+      <!-- Deck -->
+      <section class="panel">
+        <div class="panel-head"><h2>Deck</h2><span class="muted small" id="deckHint">What you play here is what listeners hear</span></div>
+        <div class="row" style="margin-bottom:14px">
+          <button id="prevBtn" aria-label="Previous song">⏮ Prev</button>
+          <button id="playBtn" class="btn-amber" style="min-width:110px">▶ Play</button>
+          <button id="nextBtn" aria-label="Next song">Next ⏭</button>
+          <label class="check" style="margin-left:auto"><input type="checkbox" id="autoNext" checked> Auto-play next</label>
+        </div>
+        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek" style="margin-bottom:14px">
+
+        <button id="micBtn" class="mic" aria-pressed="false">🎙 Mic off — tap to talk</button>
+        <div class="form-grid" style="margin-top:14px">
+          <div class="slider"><span>Music</span><input type="range" id="musicVol" min="0" max="100" value="85"><span id="musicVolV">85</span></div>
+          <div class="slider"><span>Mic</span><input type="range" id="micVol" min="0" max="150" value="100"><span id="micVolV">100</span></div>
+          <label class="check"><input type="checkbox" id="duck" checked> Lower the music while I talk</label>
+          <div><p class="small muted" style="margin-bottom:6px">Broadcast level</p><div class="vu"><i id="vu"></i></div></div>
+        </div>
+      </section>
+
+      <!-- Library -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Library <span class="muted small" id="libCount"></span></h2>
+          <label class="btn btn-sm btn-amber" style="color:#2a1e00">
+            Add songs <input type="file" id="fileInput" accept="audio/*" multiple class="hidden">
+          </label>
+        </div>
+        <p class="small muted" style="margin-bottom:10px">Songs stay on this computer and are streamed live. Name files like <i>Artist - Title.mp3</i> to show artist names. Listeners can request any song here.</p>
+        <ul class="list" id="library"></ul>
+      </section>
+    </div>
+
+    <div class="col">
+      <!-- Requests -->
+      <section class="panel">
+        <div class="panel-head"><h2>Requests</h2><span class="muted small" id="reqSummary"></span></div>
+        <div class="note" style="margin-bottom:10px">Check each UTR in your bank or UPI app before you approve it. Approved requests play before the rest of your playlist.</div>
+        <div class="row" style="margin-bottom:10px">
+          <button class="btn-sm" data-filter="open" aria-pressed="true">Open</button>
+          <button class="btn-sm btn-ghost" data-filter="all" aria-pressed="false">All</button>
+        </div>
+        <ul class="list" id="requests"></ul>
+      </section>
+
+      <!-- Chat -->
+      <section class="panel">
+        <div class="panel-head"><h2>Listener chat</h2></div>
+        <div class="chat-log" id="chatLog"></div>
+        <form class="chat-form" id="chatForm">
+          <input type="text" id="chatText" maxlength="240" placeholder="Say something to listeners" aria-label="Message">
+          <button>Send</button>
+        </form>
+      </section>
+
+      <!-- Settings -->
+      <section class="panel">
+        <div class="panel-head"><h2>Station and payments</h2></div>
+        <form id="cfgForm" class="form-grid">
+          <div class="form-grid two">
+            <label>Station name <input type="text" id="cfgName" maxlength="60" required></label>
+            <label>Tagline <input type="text" id="cfgTag" maxlength="100"></label>
+          </div>
+          <div class="form-grid two">
+            <label>Your UPI ID <input type="text" id="cfgUpi" placeholder="yourname@okaxis" maxlength="256" autocomplete="off"></label>
+            <label>Name shown in UPI app <input type="text" id="cfgPayee" maxlength="60"></label>
+          </div>
+          <label>Price per song request (₹) — set 0 for free requests <input type="number" id="cfgPrice" min="0" max="100000" step="1"></label>
+          <p id="cfgErr" class="error hidden"></p>
+          <button class="btn-amber" type="submit">Save settings</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/host.js"></script>
+</body>
+</html>

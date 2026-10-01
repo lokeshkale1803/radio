@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Radio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span id="lamp" class="lamp" aria-hidden="true"></span>
+      <div>
+        <h1 id="stationName">Radio</h1>
+        <p class="muted" id="tagline"></p>
+      </div>
+    </div>
+    <div class="row">
+      <span class="status-text" id="liveText">Off air</span>
+      <span class="pill"><span id="listenerCount">0</span>&nbsp;listening</span>
+    </div>
+  </header>
+
+  <section class="dial" id="dial" aria-live="polite">
+    <p class="dial-title">Waiting for the show</p>
+    <p class="dial-sub">The host isn’t on air right now. Keep this page open — you’ll hear it as soon as they go live.</p>
+    <p class="dedication hidden"></p>
+    <div class="dial-scale" aria-hidden="true">
+      <div class="dial-ticks"></div>
+      <div class="dial-nums"><span>88</span><span>92</span><span>96</span><span>100</span><span>104</span><span>108</span></div>
+      <div class="needle"></div>
+    </div>
+    <div class="dial-times"><span data-cur>0:00</span><span data-dur>--:--</span></div>
+  </section>
+
+  <div class="grid listen" style="margin-top:16px">
+    <div class="col">
+      <section class="panel">
+        <button id="tuneBtn" class="btn-big btn-amber">▶ Tune in</button>
+        <div class="row spread" style="margin-top:14px">
+          <span class="row"><span class="eq" id="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="connText" class="muted small">Not connected</span></span>
+        </div>
+        <div class="slider" style="margin-top:12px"><span>Volume</span><input type="range" id="vol" min="0" max="100" value="90" aria-label="Volume"><span id="volV">90</span></div>
+        <audio id="player" autoplay playsinline></audio>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Request a song</h2>
+          <span class="pill" id="priceTag"></span>
+        </div>
+        <input type="search" id="search" placeholder="Search the host’s library" aria-label="Search songs" style="margin-bottom:10px">
+        <ul class="list" id="library"></ul>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel">
+        <div class="panel-head"><h2>Your requests</h2></div>
+        <ul class="list" id="myRequests"></ul>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Chat</h2></div>
+        <div class="chat-log" id="chatLog"></div>
+        <form class="chat-form" id="chatForm">
+          <input type="text" id="chatText" maxlength="240" placeholder="Say hi to the host" aria-label="Message">
+          <button>Send</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- Request + payment sheet -->
+<div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet">
+    <!-- step 1 -->
+    <div id="step1" class="form-grid">
+      <h2 id="sheetTitle">Request this song</h2>
+      <p id="sheetSong" class="dial-title" style="font-size:1.3rem;color:var(--text)"></p>
+      
+      <div id="reqCustomFields" class="form-grid hidden">
+        <label>Song name <input type="text" id="reqSongTitle" maxlength="120"></label>
+        <label>Artist name (optional) <input type="text" id="reqArtistName" maxlength="120"></label>
+      </div>
+
+      <label>Your name <input type="text" id="reqName" maxlength="40" autocomplete="nickname"></label>
+      <label>Dedication/message (optional) <textarea id="reqMsg" maxlength="140" placeholder="For my sister, happy birthday!"></textarea></label>
+      <p class="error hidden" id="err1"></p>
+      <div class="row">
+        <button class="btn-amber" id="startBtn" style="flex:1">Continue</button>
+        <button class="btn-ghost" data-close>Cancel</button>
+      </div>
+    </div>
+
+    <!-- step 2 -->
+    <div id="step2" class="form-grid hidden">
+      <h2>Pay with UPI</h2>
+      <p class="amount" id="payAmount"></p>
+      <p class="muted small" style="text-align:center">to <b id="payPayee"></b> · <span id="payUpi"></span></p>
+      <a class="btn btn-amber btn-big" id="payLink" href="#">Open UPI app</a>
+      <p class="muted small" style="text-align:center">On a computer? Scan this with any UPI app.</p>
+      <img class="qr" id="payQr" alt="UPI payment QR code">
+      <label>After paying, enter the 12-digit UTR / reference number
+        <input type="text" id="utr" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="e.g. 412345678901" autocomplete="off">
+      </label>
+      <div class="note">You’ll find it on the payment success screen or in your UPI app’s history. The host checks it before playing your song.</div>
+      <p class="error hidden" id="err2"></p>
+      <div class="row">
+        <button class="btn-amber" id="utrBtn" style="flex:1">Submit payment</button>
+        <button class="btn-ghost" id="cancelReq">Cancel request</button>
+      </div>
+    </div>
+
+    <!-- step 3 -->
+    <div id="step3" class="form-grid hidden" style="text-align:center">
+      <h2>Request sent</h2>
+      <p id="doneText" class="muted"></p>
+      <button class="btn-amber" data-close>Back to the show</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/listen.js"></script>
+</body>
+</html>
