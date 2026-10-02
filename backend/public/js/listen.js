@@ -20,7 +20,6 @@
     library = s.library; renderLibrary();
     setNowPlaying(s.nowPlaying);
     $('listenerCount').textContent = s.listeners;
-    $('chatLog').replaceChildren(); s.chat.forEach(addChat);
     s.myRequests.forEach(r => myRequests.set(r.id, r)); renderMine();
     if (tuned) socket.emit('listener:tunein'); // re-register after reconnect
   });
@@ -197,55 +196,44 @@
 
   function openRequest(song) {
     pickedSong = song;
-    $('reqCustomFields').classList.add('hidden');
-    $('sheetSong').classList.remove('hidden');
-    $('sheetSong').textContent = song.artist ? `${song.title} — ${song.artist}` : song.title;
+    $('reqSongTitle').value = song.title;
+    $('reqArtistName').value = song.artist || '';
     $('reqName').value = localStorage.getItem('radioName') || '';
-    $('reqMsg').value = '';
     $('err1').classList.add('hidden');
-    $('startBtn').textContent = info.price > 0 ? `Continue to pay ₹${info.price}` : 'Send request';
     showStep(1); openModal();
     $('reqName').focus();
   }
 
   function openManualRequest(q) {
     pickedSong = null;
-    $('sheetSong').classList.add('hidden');
-    $('reqCustomFields').classList.remove('hidden');
     $('reqSongTitle').value = q;
     $('reqArtistName').value = '';
     $('reqName').value = localStorage.getItem('radioName') || '';
-    $('reqMsg').value = '';
     $('err1').classList.add('hidden');
-    $('startBtn').textContent = info.price > 0 ? `Continue to pay ₹${info.price}` : 'Send request';
     showStep(1); openModal();
     $('reqSongTitle').focus();
   }
 
-  $('startBtn').addEventListener('click', () => {
-    const name = $('reqName').value.trim();
-    if (!name) { $('err1').textContent = 'Add your name so the host can give you a shout-out.'; $('err1').classList.remove('hidden'); return; }
-    
-    let reqData = { name, message: $('reqMsg').value };
-    if (pickedSong) {
-      reqData.songId = pickedSong.id;
-    } else {
-      reqData.customTitle = $('reqSongTitle').value.trim();
-      reqData.customArtist = $('reqArtistName').value.trim();
-      if (!reqData.customTitle) {
-        $('err1').textContent = 'Please enter a song name.'; $('err1').classList.remove('hidden'); return;
-      }
+  $('waSendBtn').addEventListener('click', () => {
+    const song = $('reqSongTitle').value.trim();
+    if (!song) {
+      $('err1').textContent = 'Please enter a song name.';
+      $('err1').classList.remove('hidden');
+      return;
     }
+    const artist = $('reqArtistName').value.trim();
+    const name = $('reqName').value.trim();
+    
+    if (name) localStorage.setItem('radioName', name);
 
-    localStorage.setItem('radioName', name);
-    $('startBtn').disabled = true;
-    socket.emit('request:start', reqData, (res) => {
-      $('startBtn').disabled = false;
-      if (!res?.ok) { $('err1').textContent = res?.error || 'Couldn’t create the request.'; $('err1').classList.remove('hidden'); return; }
-      myRequests.set(res.request.id, res.request); renderMine();
-      if (res.free) { $('doneText').textContent = 'Your request is in the host’s queue.'; showStep(3); return; }
-      showPayment(res);
-    });
+    const message = `🎵 Song Request\nSong: ${song}\nArtist: ${artist || "Not specified"}\nFrom: ${name || "Anonymous"}\nSent from My Radio`;
+    
+    const number = window.RADIO_WHATSAPP_NUMBER || "91XXXXXXXXXX";
+    
+    const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    
+    closeModal();
   });
 
   const payCache = new Map(); // request id -> payment details (so "Finish payment" works)
@@ -283,24 +271,7 @@
     closeModal();
   });
 
-  // ---------------- Chat ----------------
-  function addChat(m) {
-    const log = $('chatLog');
-    const stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 30;
-    log.append(el('div', { class: 'chat-msg' + (m.host ? ' host' : '') }, el('b', {}, m.name), m.text));
-    while (log.children.length > 80) log.firstChild.remove();
-    if (stick) log.scrollTop = log.scrollHeight;
-  }
-  socket.on('chat:msg', addChat);
-  $('chatForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = $('chatText').value.trim();
-    if (!text) return;
-    let name = localStorage.getItem('radioName');
-    if (!name) { name = (prompt('Your name for the chat?') || '').trim().slice(0, 30); if (!name) return; localStorage.setItem('radioName', name); }
-    socket.emit('chat:send', { name, text });
-    $('chatText').value = '';
-  });
+
 
   renderLibrary(); renderMine();
 })();

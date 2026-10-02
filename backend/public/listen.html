@@ -64,14 +64,7 @@
         <ul class="list" id="myRequests"></ul>
       </section>
 
-      <section class="panel">
-        <div class="panel-head"><h2>Chat</h2></div>
-        <div class="chat-log" id="chatLog"></div>
-        <form class="chat-form" id="chatForm">
-          <input type="text" id="chatText" maxlength="240" placeholder="Say hi to the host" aria-label="Message">
-          <button>Send</button>
-        </form>
-      </section>
+
     </div>
   </div>
 </main>
@@ -82,18 +75,16 @@
     <!-- step 1 -->
     <div id="step1" class="form-grid">
       <h2 id="sheetTitle">Request this song</h2>
-      <p id="sheetSong" class="dial-title" style="font-size:1.3rem;color:var(--text)"></p>
       
-      <div id="reqCustomFields" class="form-grid hidden">
-        <label>Song name <input type="text" id="reqSongTitle" maxlength="120"></label>
-        <label>Artist name (optional) <input type="text" id="reqArtistName" maxlength="120"></label>
+      <div id="reqCustomFields" class="form-grid">
+        <label>Song Name * <input type="text" id="reqSongTitle" maxlength="120"></label>
+        <label>Artist Name <input type="text" id="reqArtistName" maxlength="120"></label>
       </div>
 
-      <label>Your name <input type="text" id="reqName" maxlength="40" autocomplete="nickname"></label>
-      <label>Dedication/message (optional) <textarea id="reqMsg" maxlength="140" placeholder="For my sister, happy birthday!"></textarea></label>
+      <label>Listener Name <input type="text" id="reqName" maxlength="40" autocomplete="nickname"></label>
       <p class="error hidden" id="err1"></p>
       <div class="row">
-        <button class="btn-amber" id="startBtn" style="flex:1">Continue</button>
+        <button class="btn-amber" id="waSendBtn" style="flex:1">Send on WhatsApp</button>
         <button class="btn-ghost" data-close>Cancel</button>
       </div>
     </div>

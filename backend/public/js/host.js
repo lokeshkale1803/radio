@@ -340,23 +340,6 @@
     }
   });
 
-  // ---------------- Chat ----------------
-  function addChat(m) {
-    const log = $('chatLog');
-    const stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 30;
-    log.append(el('div', { class: 'chat-msg' + (m.host ? ' host' : '') }, el('b', {}, m.name), m.text));
-    while (log.children.length > 80) log.firstChild.remove();
-    if (stick) log.scrollTop = log.scrollHeight;
-  }
-  socket.on('chat:msg', addChat);
-  $('chatForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = $('chatText').value.trim();
-    if (!text) return;
-    socket.emit('chat:send', { text });
-    $('chatText').value = '';
-  });
-
   // ---------------- Settings ----------------
   function fillConfig(c) {
     config = c;
@@ -396,7 +379,6 @@
       requests = new Map(res.requests.map(r => [r.id, r]));
       renderRequests();
       $('listenerCount').textContent = res.listeners;
-      if (!joined) res.chat.forEach(addChat);
       joined = true;
       sendLibrary();
       // after a reconnect, resume the broadcast automatically

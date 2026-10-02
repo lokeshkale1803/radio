@@ -1,5 +1,6 @@
 // Shared helpers for host + listener pages
 
+window.RADIO_WHATSAPP_NUMBER = "91XXXXXXXXXX"; // Replace XXXXXXXXXX with your WhatsApp number without + or spaces
 // ICE (STUN/TURN) servers come from the server's environment variables
 let rtcConfigPromise = null;
 window.getRtcConfig = function () {

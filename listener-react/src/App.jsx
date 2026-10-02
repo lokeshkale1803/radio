@@ -18,7 +18,7 @@ export default function App() {
   const [library, setLibrary] = useState([]);
   const [nowPlaying, setNowPlaying] = useState(null);
   const [myRequests, setMyRequests] = useState([]);
-  const [chat, setChat] = useState([]);
+
   const [search, setSearch] = useState('');
 
   const [tuned, setTuned] = useState(false);
@@ -27,7 +27,7 @@ export default function App() {
 
   const playerRef = useRef(null);
   const pcRef = useRef(null);
-  const chatLogRef = useRef(null);
+
 
   // State for modal / payment
   const [modalOpen, setModalOpen] = useState(false);
@@ -56,7 +56,7 @@ export default function App() {
       setLibrary(state.library || []);
       setNowPlaying(state.nowPlaying);
       setListenerCount(state.listeners);
-      setChat(state.chat || []);
+
       setMyRequests(state.myRequests || []);
       if (tuned) s.emit('listener:tunein');
     });
@@ -71,7 +71,7 @@ export default function App() {
         return [...arr, r];
       });
     });
-    s.on('chat:msg', (m) => setChat(prev => [...prev, m]));
+
 
     return () => s.disconnect();
   }, [clientId, tuned]);
@@ -112,10 +112,7 @@ export default function App() {
     return () => socket.off('signal', handleSignal);
   }, [socket, tuned]);
 
-  // Scroll chat to bottom
-  useEffect(() => {
-    if (chatLogRef.current) chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-  }, [chat]);
+
 
   const toggleTune = () => {
     if (!tuned) {
@@ -160,36 +157,21 @@ export default function App() {
   };
 
   const submitRequest = () => {
+    const song = pickedSong ? pickedSong.title : customTitle.trim();
+    if (!song) return setErr1('Please enter a song name.');
+    
+    const artist = pickedSong ? pickedSong.artist : reqArtistName.trim();
     const name = reqName.trim();
-    if (!name) return setErr1('Add your name so the host can give you a shout-out.');
     
-    let reqData = { name, message: reqMsg };
-    if (pickedSong) {
-      reqData.songId = pickedSong.id;
-    } else {
-      reqData.customTitle = customTitle.trim();
-      reqData.customArtist = reqArtistName.trim();
-      if (!reqData.customTitle) return setErr1('Please enter a song name.');
-    }
+    if (name) localStorage.setItem('radioName', name);
+
+    const message = `🎵 Song Request\nSong: ${song}\nArtist: ${artist || "Not specified"}\nFrom: ${name || "Anonymous"}\nSent from My Radio`;
     
-    localStorage.setItem('radioName', name);
-    socket.emit('request:start', reqData, (res) => {
-      if (!res?.ok) return setErr1(res?.error || 'Couldn’t create the request.');
-      setMyRequests(prev => {
-        const arr = prev.filter(x => x.id !== res.request.id);
-        return [...arr, res.request];
-      });
-      if (res.free) {
-        setDoneText('Your request is in the host’s queue.');
-        setStep(3);
-      } else {
-        setActiveReq(res.request);
-        setPayRes(res);
-        setUtr('');
-        setErr2('');
-        setStep(2);
-      }
-    });
+    const number = window.RADIO_WHATSAPP_NUMBER || "91XXXXXXXXXX";
+    const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    
+    setModalOpen(false);
   };
 
   const submitUtr = () => {
@@ -201,16 +183,7 @@ export default function App() {
     });
   };
 
-  const chatSubmit = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const text = fd.get('chatText').trim();
-    if (!text) return;
-    let name = localStorage.getItem('radioName');
-    if (!name) { name = (prompt('Your name for the chat?') || '').trim().slice(0,30); if (!name) return; localStorage.setItem('radioName', name); }
-    socket.emit('chat:send', { name, text });
-    e.target.reset();
-  };
+
 
   const filteredLibrary = library.filter(s => !search || (s.title + ' ' + s.artist).toLowerCase().includes(search.toLowerCase()));
   const sortedRequests = [...myRequests].filter(r => r.status !== 'cancelled').sort((a, b) => b.createdAt - a.createdAt);
@@ -312,20 +285,7 @@ export default function App() {
             </ul>
           </section>
 
-          <section className="panel">
-            <div className="panel-head"><h2>Chat</h2></div>
-            <div className="chat-log" style={{ maxHeight: 300, overflowY: 'auto' }} ref={chatLogRef}>
-              {chat.map(m => (
-                <div key={m.id} className={`chat-msg ${m.host ? 'host' : ''}`}>
-                  <b>{m.name}</b> {m.text}
-                </div>
-              ))}
-            </div>
-            <form className="chat-form" onSubmit={chatSubmit}>
-              <input type="text" name="chatText" maxLength="240" placeholder="Say hi to the host" />
-              <button>Send</button>
-            </form>
-          </section>
+
         </div>
       </div>
 
@@ -335,21 +295,14 @@ export default function App() {
             {step === 1 && (
               <div className="form-grid">
                 <h2>Request this song</h2>
-                {pickedSong ? (
-                  <p className="dial-title" style={{ fontSize: '1.3rem', color: 'var(--text)' }}>
-                    {pickedSong.artist ? `${pickedSong.title} — ${pickedSong.artist}` : pickedSong.title}
-                  </p>
-                ) : (
-                  <div className="form-grid">
-                    <label>Song name <input type="text" value={customTitle} onChange={e => setCustomTitle(e.target.value)} /></label>
-                    <label>Artist name (optional) <input type="text" value={reqArtistName} onChange={e => setReqArtistName(e.target.value)} /></label>
-                  </div>
-                )}
-                <label>Your name <input type="text" value={reqName} onChange={e => setReqName(e.target.value)} /></label>
-                <label>Dedication (optional) <textarea value={reqMsg} onChange={e => setReqMsg(e.target.value)}></textarea></label>
+                <div className="form-grid">
+                  <label>Song Name * <input type="text" value={pickedSong ? pickedSong.title : customTitle} onChange={e => setCustomTitle(e.target.value)} disabled={!!pickedSong} /></label>
+                  <label>Artist Name <input type="text" value={pickedSong ? (pickedSong.artist || '') : reqArtistName} onChange={e => setReqArtistName(e.target.value)} disabled={!!pickedSong} /></label>
+                </div>
+                <label>Listener Name <input type="text" value={reqName} onChange={e => setReqName(e.target.value)} /></label>
                 {err1 && <p className="error">{err1}</p>}
                 <div className="row">
-                  <button className="btn-amber" style={{ flex: 1 }} onClick={submitRequest}>Continue</button>
+                  <button className="btn-amber" style={{ flex: 1 }} onClick={submitRequest}>Send on WhatsApp</button>
                   <button className="btn-ghost" onClick={() => setModalOpen(false)}>Cancel</button>
                 </div>
               </div>

@@ -83,8 +83,7 @@ const state = {
   live: false,
   library: [],        // [{id, title, artist, duration}]
   nowPlaying: null,   // {title, artist, duration, startedAt, requestId?, by?}
-  listeners: new Set(), // socket ids that tuned in
-  chat: []
+  listeners: new Set() // socket ids that tuned in
 };
 
 // ---------- Helpers ----------
@@ -139,8 +138,7 @@ io.on('connection', (socket) => {
       ok: true,
       config: store.config,
       requests: store.requests.filter(r => r.status !== 'awaiting_payment').slice(-200).map(hostRequest),
-      listeners: state.listeners.size,
-      chat: state.chat
+      listeners: state.listeners.size
     });
   });
 
@@ -213,7 +211,6 @@ io.on('connection', (socket) => {
       nowPlaying: state.nowPlaying,
       library: state.library,
       listeners: state.listeners.size,
-      chat: state.chat,
       myRequests: store.requests.filter(r => r.clientId === cid).slice(-20).map(publicRequest)
     });
   });
@@ -301,19 +298,6 @@ io.on('connection', (socket) => {
   socket.on('request:cancel', ({ id } = {}) => {
     const r = store.requests.find(x => x.id === id && x.clientId === socket.data.clientId);
     if (r && r.status === 'awaiting_payment') { r.status = 'cancelled'; pushRequestUpdate(r); }
-  });
-
-  // ===== CHAT =====
-  socket.on('chat:send', ({ name, text } = {}) => {
-    const now = Date.now();
-    if (socket.data.lastChat && now - socket.data.lastChat < 1500) return; // simple flood guard
-    socket.data.lastChat = now;
-    const t = clean(text, 240);
-    if (!t) return;
-    const msg = { id: crypto.randomBytes(6).toString('hex'), name: isHost() ? (store.config.stationName + ' (host)') : (clean(name, 30) || 'Listener'), host: isHost(), text: t, at: now };
-    state.chat.push(msg);
-    if (state.chat.length > 60) state.chat.shift();
-    io.emit('chat:msg', msg);
   });
 
   // ===== WebRTC SIGNALING (host <-> one listener) =====
